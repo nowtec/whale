@@ -152,7 +152,21 @@ https://github.com/semantica-agi/semantica/blob/main/ARCHITECTURE.md
 
 ## Current progress:
 20.08.2026:
-- Implmented: achticectural research
+- Implmented: architectural research
 - Memory hooks, session init
 
 Next steps: proper memory arrangement, ideas: always ask llm to return a prepared graph objects like node or branch (as we intend to have a memory of graph structure) and save it immediately. Or we fire a tool call with fire-and-roget option to form this graph primitive.
+
+28.08.2026
+- Looked at cogee, neo4j agent memory, semantica and openwoldf
+- semantica is data lake and ETL pipeline exposed to the agents with graph storage capabilities
+- Neo4j agent is a graph like , ER memory interface, opionated and dependant on the backbones
+- Cognee is the closest competitor to whale-harness's memory ambition in the open-source world: a pluggable, persistent, multi-layered memory engine for AI agents that combines a knowledge graph + vector store + session cache + (optional) LLM-driven self-improvement loops. It is the only reviewed engine that takes both structured (graph) memory and feedback-driven self-tuning seriously.
+- openwolf is a simplistic coding memory with hooks
+
+
+
+
+# Useful R n D prompts
+
+Please research the git@github.com:cytostack/openwolf.git , clone it in tmp directory , run tree, grep and other read commands. and please write how it works here docs/memory engines overview/docs/memory engines overview/openwolf_memory.md . Also give your comments if it fits to be a memory agent for our whale Harness. Does it has self learning capabilities?
