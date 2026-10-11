@@ -187,3 +187,5 @@ _output/
 *.key
 *.crt
 secrets/
+.sessions
+.claude

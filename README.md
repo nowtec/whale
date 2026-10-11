@@ -71,8 +71,6 @@ Agents and task survivoal `cronjob` or `terminal(background=True, notify_on_comp
 - github actions for CI/CD
 
 
-
-
 - opencode + Miniimax M3
 - kiloode
 - Codex
@@ -94,7 +92,7 @@ Availble commands:
 -sk --skills add nameoftheskill/SKILL.md
 -ag --agents add [AGENT]
 -aa --apps add type: OAuth 
--mm --memory manage [forget | relearn | add ]
+-mm --memory [show | plot | refine | manage [forget | relearn | add ]]
 
 -cc --custom commands
 --c -add  
@@ -115,7 +113,7 @@ apps
 - oauth.json
 - specs.jsom (can have OpenAPI)
 
-memory -> mongo like, sql like (with a native tools to read from it)
+memory -> memory to be stored as JSON+NetworkX 
 
 sessions 
 SessioId , MessageId, tools_called, content
@@ -147,6 +145,8 @@ curl and brew installation, apt etc installations
 ## Further reading
 https://github.com/sturlese/stigmergy/blob/main/docs/decisions/023-learning-loop.md
 https://github.com/semantica-agi/semantica/blob/main/ARCHITECTURE.md
+https://networkx.org/documentation/stable/reference/readwrite/json_graph.html
+https://arxiv.org/abs/2609.09153
 
 
 
@@ -163,6 +163,45 @@ Next steps: proper memory arrangement, ideas: always ask llm to return a prepare
 - Neo4j agent is a graph like , ER memory interface, opionated and dependant on the backbones
 - Cognee is the closest competitor to whale-harness's memory ambition in the open-source world: a pluggable, persistent, multi-layered memory engine for AI agents that combines a knowledge graph + vector store + session cache + (optional) LLM-driven self-improvement loops. It is the only reviewed engine that takes both structured (graph) memory and feedback-driven self-tuning seriously.
 - openwolf is a simplistic coding memory with hooks
+
+
+
+11.10.2026
+- Implementing Prodecural Graph memory baseed on docs/Procedural Graphs Self-Evolving Execution Structures for LLM Agents .pdf , memory to be stored as JSON+NetworkX 
+
+
+11.10.2026
+- Implement ReAct, Potentially star diagram
+- Pick and Plan steps
+- Agent turns ~3-8 / infinite(?)
+
+
+
+Further this month :
+
+- Tool calling, tool creations
+- Sub Agent spinning up
+- conencting MCP, oauth apps and plugins
+- Connecting multiple LLMs
+- UI for the terminal
+- - Token maths , how much tokens a session / iteration in the Agent Loop consumes
+- Settings
+
+
+
+# Procedural memory implementation
+
+
+Procedural graph memory (docs/superpowers/specs/2026-10-11-procedural-graph-memory-design.md) — implemented:
+`uv run python main.py "<task>"` runs the 3-turn loop with graph guidance; `uv run python main.py refine [--session-id SID] [--round K]` evolves the graph (evolution is manual, never automatic).
+`uv run python scripts/smoke_pg.py` is a stub-LLM end-to-end check.
+
+Next steps (procedural graph memory):
+- Migration script for legacy `entries.json` triplets
+- Real ReAct tool dispatcher (agent_loop is a thin primitive with stub observations)
+- Embedding-based localization backup (exact match misses paraphrased actions)
+- Embedding-based similarity for `H_rejected` retrieval (large rejection memories)
+- Per-task typed schema file for attribute fields beyond condition/guidance/pitfalls
 
 
 

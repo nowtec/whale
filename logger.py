@@ -14,6 +14,7 @@ from typing import Any
 _VALID_LEVELS: dict[str, int] = {
     "DEBUG": logging.DEBUG,
     "INFO": logging.INFO,
+    "WARN": logging.WARNING,
     "WARNING": logging.WARNING,
     "ERROR": logging.ERROR,
     "CRITICAL": logging.CRITICAL,

@@ -14,13 +14,12 @@ Replace `whale`'s flat `MemoryEngine` with a **Procedural Graph** (PG) memory en
 
 1. **Graph store** — directed, attributed graph `G = (V, R, E, Φ)` of `(procedure, relation, procedure)` triplets carrying `condition / guidance / pitfalls` attributes (paper §3.1).
 2. **Online Generative Guidance** — localize the active node from the agent's trajectory, extract the 2-hop neighborhood `N_h(u_t)`, and translate it into step-level situational guidance appended to the solver's prompt (paper §3.2).
-3. **Offline Self-Evolution** — at the end of each agent run, an LLM refiner contrasts successful vs. failing trajectories and proposes edits (`add_nodes`, `delete_nodes`, `add_edges`, `delete_edges`); candidates are committed when a structural-validation score does not decrease; rejected candidates are retained as negative evidence (paper §3.3 + Algorithm 1).
+3. **Offline Self-Evolution** — at the end of each agent run, an LLM refiner contrasts successful vs. failing trajectories and proposes edits (`add_nodes`, `delete_nodes`, `add_edges`, `delete_edges`); candidates are committed when a structural-validation score does not decrease; rejected candidates are retained as negative evidence (paper §3.3 + Algorithm 1). Only by calling `refine` command
 
 ### Non-Goals (this iteration)
 
 - Full ReAct/Tool dispatcher — we add a **minimal** K-turn AgentLoop primitive only to expose the right memory boundaries (§4.2). The tool surface stays text-shaped.
-- Benchmark pipelines (HotpotQA, MultiChallenge, ALFWorld, …). Structural validation stands in for empirical `S_val` (§4.3).
-- Migration of legacy `entries.json` triplets into the new graph. A `whale migrate memory v1 v2` will come later.
+- We do no need any migrations
 - Multi-task training/eval splits. The K-round evolution loop is exposed via `whale refine` for callers to drive manually if they want larger runs.
 
 ---
@@ -90,7 +89,7 @@ memory.evolve_from_trajectory(session_id: str, *, mode: str = "incremental",
 ```
 ~/.whale/
 ├── memory/
-│   ├── entries.json             # legacy flat entries; untouched in this iteration
+│   ├── entries.json             # legacy flat entries; won't be used
 │   ├── procedural_graph.json    # node-link JSON, written by networkx
 │   └── rejections.jsonl         # H_rejected — one JSON object per line
 ├── sessions/
