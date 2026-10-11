@@ -75,6 +75,42 @@ class SessionManager:
         )
         logger.info("session.append", session_id=session_id, role=message.get("role"))
 
+    def close_session(
+        self,
+        session_id: str,
+        *,
+        evolve: bool = False,
+        memory_engine: Any | None = None,
+    ) -> Any | None:
+        """Mark the session closed; optionally evolve the procedural graph."""
+        path = self._path_for(session_id)
+        if not path.exists():
+            raise FileNotFoundError(f"session not found: {session_id}")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["closed_at"] = self._now()
+        path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+
+        if not evolve:
+            logger.info("session.close", session_id=session_id, evolve=False)
+            return None
+
+        engine = memory_engine
+        if engine is None:
+            import memory  # lazy: memory loads sessions through this module
+
+            engine = memory.memoryEngine
+        result = engine.evolve_from_trajectory(session_id)
+        logger.info(
+            "session.close",
+            session_id=session_id,
+            accepted=result.accepted,
+            score_before=result.score_before,
+            score_after=result.score_after,
+        )
+        return result
+
     def listSessions(self) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
         for file in self.sessions_dir.glob("*.json"):
@@ -111,6 +147,14 @@ def initSession(path: Path | None = None) -> Session:
 
 def appendMessage(session_id: str, message: dict[str, Any]) -> None:
     sessionManager.appendMessage(session_id, message)
+
+
+def close_session(
+    session_id: str, *, evolve: bool = False, memory_engine: Any | None = None
+) -> Any | None:
+    return sessionManager.close_session(
+        session_id, evolve=evolve, memory_engine=memory_engine
+    )
 
 
 def listSessions() -> list[dict[str, Any]]:

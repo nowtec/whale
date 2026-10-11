@@ -163,3 +163,9 @@ def test_all_levels_callable(fresh_logger, capsys):
     assert len(out) == 5
     levels = [json.loads(line)["level"] for line in out]
     assert levels == ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+
+def test_log_level_warn_alias(fresh_logger_with_level, capsys):
+    mod = fresh_logger_with_level("WARN")
+    assert mod.logger.level == logging.WARNING
+    assert "invalid LOG_LEVEL" not in capsys.readouterr().err
