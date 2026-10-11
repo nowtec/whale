@@ -7,15 +7,19 @@ import typer
 from typer.core import TyperGroup
 
 import agent_loop
+import orchestrator
 from memory import describe_graph, evolve_from_trajectory, render_graph_html
 from session import initSession, listSessions
 
 
+_ROOT_OPTIONS = {"--help", "--install-completion", "--show-completion"}
+
+
 class DefaultCommandGroup(TyperGroup):
-    """Route an unmatched positional argument to the default command."""
+    """Route anything that is not a command or root option to the default command."""
 
     def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
-        if args and not args[0].startswith("-") and args[0] not in self.commands:
+        if args and args[0] not in self.commands and args[0] not in _ROOT_OPTIONS:
             args = ["prompt", *args]
         return super().parse_args(ctx, args)
 
@@ -29,14 +33,54 @@ def prompt(
     no_loop: bool = typer.Option(
         False, "--no-loop", help="Single shot: one turn, no multi-turn loop."
     ),
+    plan: bool = typer.Option(
+        False,
+        "-p",
+        "--plan",
+        help="Plan first (Recall, Plan, Critic, approval), then run each step.",
+    ),
+    strict: bool = typer.Option(
+        False, "--strict", help="With --plan: strict critic, re-plan on blocking defects."
+    ),
+    no_human: bool = typer.Option(
+        False, "--no-human", help="With --plan: skip the human approval gate."
+    ),
+    max_turns: int = typer.Option(
+        orchestrator.DEFAULT_MAX_TURNS,
+        "--max-turns",
+        help="With --plan: executor turns per sub-task.",
+    ),
 ) -> None:
     """Execute a prompt through the agent loop with procedural-graph guidance."""
+    if plan:
+        _orchestrate(text, strict=strict, no_human=no_human, max_turns=max_turns)
+        return
     if no_loop:
         result = agent_loop.run_with_guidance(text)
     else:
         session = initSession()
         result = agent_loop.run(task=text, session_id=session.id, max_turns=3)
     typer.echo(result.final_answer)
+
+
+def _orchestrate(text: str, *, strict: bool, no_human: bool, max_turns: int) -> None:
+    result = orchestrator.run(
+        text,
+        strict=strict,
+        max_turns=max_turns,
+        on_human_approval=None if no_human else orchestrator.default_human_approval,
+        on_progress=typer.echo,
+    )
+    typer.echo(result.status + (f" ({result.reason})" if result.reason else ""))
+    for execution in result.executions:
+        typer.echo(
+            f"  - {execution.plan_node_id}: {execution.status} "
+            f"({execution.turns} turns)"
+        )
+        if execution.final_answer:
+            typer.echo(f"      {execution.final_answer}")
+    if result.status not in ("ok", "partial"):
+        raise typer.Exit(code=1)
 
 
 @app.command()
