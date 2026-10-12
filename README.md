@@ -25,10 +25,13 @@
 
 ## Architecture
 (
+
+    PLAN SECTION
 1. pick up (remember what was before aka retrieve from memory)
 2. learn (run a loop to have high level understanding what was before)
 3. plan (run a loop to iterate over planning, this includes spinning up the agents to plan (a swarm), maybe! plan with tree like structure, tree-like graph  ) 
 4. research ( research further down to strengthen the plan, also with the swarm of agentic) 
+    EXECUTION SECTION
 5. Execute the plan -> produce the output for the user, via swarm. 
 6. Register the completion fact, save the output, match it to the plan from step 3.
 7. Decide -> Provide the output
@@ -147,7 +150,8 @@ https://github.com/sturlese/stigmergy/blob/main/docs/decisions/023-learning-loop
 https://github.com/semantica-agi/semantica/blob/main/ARCHITECTURE.md
 https://networkx.org/documentation/stable/reference/readwrite/json_graph.html
 https://arxiv.org/abs/2609.09153
-
+https://neo4j.com/blog/agentic-ai/agentic-architecture/
+https://block.xyz/documents/adversarial-cooperation-in-code-synthesis.pdf
 
 
 ## Current progress:
@@ -171,14 +175,17 @@ Next steps: proper memory arrangement, ideas: always ask llm to return a prepare
 
 
 11.10.2026
-- Implement ReAct, Potentially star diagram
-- Pick and Plan steps
+- Implement Agentic Archiecture, Potentially star diagram. For plan section we might want to use block.xyz Adversarial cooperation
+- Pick and Plan steps , see PLAN SECTION
 - Agent turns ~3-8 / infinite(?)
 
 
 
 Further this month :
 
+- Terminal: Glamurous agents/subagents calls
+- Terminal:  Glamorous planned
+- Thinking signal animations
 - Tool calling, tool creations
 - Sub Agent spinning up
 - conencting MCP, oauth apps and plugins

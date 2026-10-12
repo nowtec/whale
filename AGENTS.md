@@ -1,0 +1,4 @@
+- No automatic git commits
+- Use superpowers or similar plugin
+- Prefer TDD over just writing code
+- Keep architecture KISS, DRY, LEAN

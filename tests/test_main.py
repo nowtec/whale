@@ -7,6 +7,13 @@ from typer.testing import CliRunner
 
 import main
 from agent_loop import RunResult
+from orchestrator_types import (
+    CritiqueReport,
+    OrchestratorResult,
+    PlanNode,
+    PlanTree,
+    SubTaskResult,
+)
 from procedural_memory.refiner import EvolutionResult
 
 runner = CliRunner()
@@ -62,6 +69,82 @@ def test_bare_text_routes_to_prompt(loop_calls):
     result = runner.invoke(main.app, ["do something useful"])
     assert result.exit_code == 0
     assert loop_calls["run"][0]["task"] == "do something useful"
+
+
+@pytest.fixture
+def orchestrate_calls(monkeypatch):
+    calls: list[tuple] = []
+    outcome = {"status": "ok", "reason": None}
+
+    def fake_run(task, **kwargs):
+        calls.append((task, kwargs))
+        plan = PlanTree(PlanNode("root", "root", task, "done"))
+        executions = [
+            SubTaskResult("s1", "sess1", "first answer", "ok", 2),
+            SubTaskResult("s2", "sess2", "second answer", "max_turns", 8),
+        ]
+        return OrchestratorResult(
+            outcome["status"],
+            outcome["reason"],
+            plan,
+            CritiqueReport([], [], "advisory"),
+            executions,
+            None,
+        )
+
+    monkeypatch.setattr(main.orchestrator, "run", fake_run)
+    return calls, outcome
+
+
+def test_plan_flag_plans_before_executing(loop_calls, orchestrate_calls):
+    calls, _ = orchestrate_calls
+    result = runner.invoke(main.app, ["prompt", "build it", "-p"])
+
+    assert result.exit_code == 0
+    task, kwargs = calls[0]
+    assert task == "build it"
+    assert kwargs["strict"] is False
+    assert kwargs["on_human_approval"] is main.orchestrator.default_human_approval
+    assert loop_calls["run"] == [] and loop_calls["run_with_guidance"] == []
+
+
+def test_plan_flag_reports_status_and_each_subtask(loop_calls, orchestrate_calls):
+    result = runner.invoke(main.app, ["prompt", "build it", "--plan"])
+    assert "ok" in result.output.splitlines()[0]
+    assert "- s1: ok (2 turns)" in result.output
+    assert "first answer" in result.output
+    assert "- s2: max_turns (8 turns)" in result.output
+
+
+def test_plan_flag_works_before_the_text(loop_calls, orchestrate_calls):
+    calls, _ = orchestrate_calls
+    result = runner.invoke(main.app, ["-p", "build it"])
+    assert result.exit_code == 0
+    assert calls[0][0] == "build it"
+
+
+def test_plan_strict_and_no_human_are_forwarded(loop_calls, orchestrate_calls):
+    calls, _ = orchestrate_calls
+    runner.invoke(main.app, ["build it", "-p", "--strict", "--no-human"])
+    _, kwargs = calls[0]
+    assert kwargs["strict"] is True
+    assert kwargs["on_human_approval"] is None
+
+
+def test_plan_failure_exits_1_with_reason(loop_calls, orchestrate_calls):
+    _, outcome = orchestrate_calls
+    outcome.update(status="rejected_by_human", reason="human_rejected_root_plan")
+    result = runner.invoke(main.app, ["build it", "-p"])
+    assert result.exit_code == 1
+    assert "rejected_by_human" in result.output
+    assert "human_rejected_root_plan" in result.output
+
+
+def test_without_plan_flag_orchestrator_is_not_used(loop_calls, orchestrate_calls):
+    calls, _ = orchestrate_calls
+    runner.invoke(main.app, ["prompt", "hello"])
+    assert calls == []
+    assert len(loop_calls["run"]) == 1
 
 
 def test_refine_runs_k_rounds_with_round_idx(evolve_calls):
@@ -160,3 +243,11 @@ def test_memory_plot_default_path_is_in_temp_dir(monkeypatch):
     result = runner.invoke(main.app, ["memory", "plot"])
     assert result.exit_code == 0
     assert "whale-graph.html" in result.output
+
+
+def test_plan_max_turns_and_progress_are_forwarded(loop_calls, orchestrate_calls):
+    calls, _ = orchestrate_calls
+    runner.invoke(main.app, ["build it", "-p", "--max-turns", "2"])
+    _, kwargs = calls[0]
+    assert kwargs["max_turns"] == 2
+    assert kwargs["on_progress"] is main.typer.echo
